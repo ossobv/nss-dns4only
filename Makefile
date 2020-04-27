@@ -3,7 +3,7 @@
 CFLAGS += -Wall -g -O -fPIC
 LDFLAGS += -Wl,--as-needed -Wl,--no-undefined
 LIBS = -lnss_dns
-VERSION = 0.0
+VERSION = 0.1
 
 _libarchsuffix = /x86_64-linux-gnu
 base_prefix =
@@ -20,7 +20,7 @@ clean:
 dist:
 	find . -type f '(' -name '*.c' -o -name '*.sym' -o -name Makefile \
 	  -o -name '*.rst' -o -name '*.txt' ')' | sed -e 's/^./nss-dns4only/' | \
-	  tar -zcf ../nss-dns4only_0.0.orig.tar.gz -C .. -T -
+	  tar -zcf ../nss-dns4only_$(VERSION).orig.tar.gz -C .. -T -
 install: all
 	install -d $(DESTDIR)$(base_libdir) $(DESTDIR)$(libdir)
 	install nss-dns4only.so \
