@@ -2,7 +2,8 @@
 
 case $1 in
 remove|purge)
-    sed -i -e '/^hosts:/s/ dns4only [[]!unavail=return[]]//' /etc/nsswitch.conf
+    sed -i -e '/^hosts:/s/ dns4only [[]!UNAVAIL=return[]]//g' \
+        /etc/nsswitch.conf
     ldconfig
     ;;
 esac

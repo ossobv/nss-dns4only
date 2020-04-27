@@ -179,7 +179,7 @@ You alter the *hosts* line in ``/etc/nsswitch.conf``, inserting
 
 Change it to::
 
-    hosts: files dns4only [!unavail=return] dns
+    hosts: files dns4only [!UNAVAIL=return] dns
 
 And now, this example call will return IPv4 addresses only:
 
@@ -222,7 +222,7 @@ directly, requesting only ``AF_INET`` and not ``AF_INET6``.
 
 The *glibc manual* has information about
 `Adding-another-Service-to-NSS`_ (version 2), about
-`Actions-in-the-NSS-configuration` (``[!unavail=return]``). More
+`Actions-in-the-NSS-configuration` (``[!UNAVAIL=return]``). More
 detailed info is in ``./resolv/nss_dns/dns-host.c`` and
 ``./sysdeps/posix/getaddrinfo.c`` (see ``__nss_lookup_function``).
 

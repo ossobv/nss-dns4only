@@ -38,9 +38,9 @@ install: all
 	-ldconfig
 
 example:
-	@echo 'Installing means inserting "dnsonly [!unavail=return]" in /etc/nsswitch.conf:'
+	@echo 'Installing means inserting "dnsonly [!UNAVAIL=return]" in /etc/nsswitch.conf:'
 	@echo
-	@echo '  hosts: files dns4only [!unavail=return] dns'
+	@echo '  hosts: files dns4only [!UNAVAIL=return] dns'
 	@echo
 	@echo 'Before and after installing, these should be different:'
 	python -c 'from socket import *; print(getaddrinfo("google.com.",443))' || true
