@@ -58,33 +58,35 @@ The function signature of ``getaddrinfo()`` is as follows:
 
 .. code-block:: c
 
-    int getaddrinfo(const char *node, const char *service,
-                    const struct addrinfo *hints,
-                    struct addrinfo **res);
+    int getaddrinfo(
+            const char *node,
+            const char *service,
+            const struct addrinfo *hints,
+            struct addrinfo **res);
 
 You pass the host name (e.g. *google.com*) in the ``node`` parameter, and get
-the *A* and *AAAA* addresses in the return value ``res``.
+the *A* and *AAAA* addresses in the return parameter ``res``.
 
-Furthermore, you can tweak the ``hints`` parameter to specify that want
-only IPv4 or IPv6 addresses by setting its ``ai_family`` parameter to
-one of ``AF_INET`` or ``AF_INET6``. Or you can set ``AI_ADDRCONFIG`` in
-the ``ai_flags`` to specify *that you only want addresses that are
+Furthermore, you can tweak the ``hints`` parameter to specify that you
+want only IPv4 or IPv6 addresses by setting its ``ai_family`` parameter
+to one of ``AF_INET`` or ``AF_INET6``. Or you can set ``AI_ADDRCONFIG``
+in the ``ai_flags`` to specify *that you only want addresses that are
 routable on your system.*
 
 That last part is interesting: *if it detects that your network devices
 have no IPv6 connectivity, it will not do any AAAA lookups. Any returned
 result would be useless to the connect() call anyway.*
 
-In the *GNU C library* (glibc) this ``AI_ADDRCONFIG`` flag defaults to true::
+In the *GNU C library* (*glibc*) this ``AI_ADDRCONFIG`` flag defaults to true:
 
-    According to POSIX.1, specifying hints as NULL should cause
-    ai_flags to be assumed as 0.  The GNU C library instead assumes a
-    value of (AI_V4MAPPED | AI_ADDRCONFIG) for this case, since this
-    value is considered an improvement on the specification.
+  According to POSIX.1, specifying ``hints`` as ``NULL`` should cause
+  ``ai_flags`` to be assumed as ``0``. The GNU C library instead assumes a
+  value of ``(AI_V4MAPPED | AI_ADDRCONFIG)`` for this case, since this
+  value is considered an improvement on the specification.
 
 That means that applications that don't specify ``hints`` will get only
 addresses they can actually connect to: *this saves an AAAA query
-per lookup if your host does not support IPv6.*
+per lookup if you have an IPv4-only system.*
 
 **However**, various applications explicitly set the ``hints`` anyway, but
 leave the ``ai_flags`` unset. For example: *Python* does, and so does *curl*.
@@ -100,7 +102,7 @@ These problems assume you don't have any IPv6 networking configured on
 your host. If do you have IPv6, you should not be looking at
 *nss-dns4only*.
 
-Problem: *instead of one DNS lookup, you're always doing two.*
+Problem: *instead of one DNS query, you're always doing two.*
 
 That means:
 
@@ -125,15 +127,15 @@ CoreDNS`_ (June, 2019):
 Why *Kubernetes* does this is beyond the scope here, but it does, and
 it multiplies the problems we mentioned.
 
-As a shortcut, the *Kubernetes* resolver *CoreDNS* has been adjusted
-to immediately respond with the *api.twilio.com* response *as
-response to the first lookup*. (Through the *autopath* plugin, possibly
-in conjunction with the *cache* plugin.) **However, this does not
-consistently work.**
+As a shortcut, the *Kubernetes* resolver *CoreDNS* has been adjusted to
+immediately respond with the *api.twilio.com* response *as response to
+the first query with the .default.svc.cluster.local search suffix*.
+(Through the *autopath* plugin, possibly in conjunction with the *cache*
+plugin.) **However, this does not consistently work.**
 
-If both the *A* and *AAAA* lookup of
-*api.twilio.com.default.svc.cluster.local* get a ``NXDOMAIN`` response,
-the next hostname is tried. **But if one of them returns a result, the
+If both the *A* and *AAAA* query for
+*api.twilio.com.default.svc.cluster.local* yield a ``NXDOMAIN`` response,
+the next hostname is tried. **But if one of them yields a result, the
 lookup stops and the result is returned to the application.**
 
 When only an *AAAA* record is returned, it appears to the caller that
@@ -148,7 +150,7 @@ these issues include:
 * Adding IPv6 connectivity to your host.
 
 * Forcing your client application to do IPv4 (passing the ``-4`` option
-  to *curl*).
+  to *curl*, or setting ``AI_ADDRCONFIG`` in ``hints``).
 
 * Using hostnames that end in a period (*api.twilio.com.* will skip the
   domain suffix search).
@@ -160,12 +162,13 @@ How nss-dns4only helps
 ----------------------
 
 Instead of you having to patch all applications to specify ``AF_INET``
-(for *curl* the ``-4`` option), *nss-dns4only* alleviates the problem by
-translating all dual *A+AAAA* lookups to a *A* lookup.
+(for *curl* the ``-4`` option) or adding ``AI_ADDRCONFIG``,
+*nss-dns4only* alleviates the problem by translating all dual *A+AAAA*
+lookups to an *A* lookup.
 
-It does so through the Name Server Switch (NSS) system, by hooking into
-dual lookup call and forwarding the lookup to the single lookup call inside
-the *glibc* ``libnss_dns`` module.
+It does so through the Name Server Switch (NSS) system, by inserting a
+custom handler for the dual lookup call and forwarding the lookup to the
+single lookup call inside the *glibc* ``libnss_dns`` module.
 
 
 How to install
@@ -174,8 +177,8 @@ How to install
 Install ``nss-dns4only.so`` as ``/lib/x86_64-linux-gnu/libnss_dns4only.so.2``
 and run ``ldconfig``. ``make install`` will do this for you.
 
-You alter the *hosts* line in ``/etc/nsswitch.conf``, inserting
-*dns4only* before *dns*::
+Alter the *hosts* line in ``/etc/nsswitch.conf``, inserting *dns4only*
+before *dns*::
 
     hosts: files dns
 
@@ -183,19 +186,19 @@ Change it to::
 
     hosts: files dns4only [!UNAVAIL=return] dns
 
-And now, this example call will return IPv4 addresses only:
+Now, this example call will return IPv4 addresses only:
 
-.. code-block:: console
+.. code-block:: shell
 
-    $ python -c 'from socket import *; print(getaddrinfo("google.com",443))'
+    python -c 'from socket import *; print(getaddrinfo("google.com",443))'
 
-(To test functionality, you can replace ``dns4only`` with
+(To test the behaviour, you can replace ``dns4only`` with
 ``dns4suffix``. Then only lookups for *DOMAIN.v4* will get the
 ``dns4only`` treatment.)
 
-.. code-block:: console
+.. code-block:: shell
 
-    $ python -c 'from socket import *; print(getaddrinfo("google.com.v4",443))'
+    python -c 'from socket import *; print(getaddrinfo("google.com.v4",443))'
 
 
 Debian packaging and download
@@ -220,27 +223,32 @@ it in ``/lib/`` yourself::
 Technical background/history
 ----------------------------
 
-In 2008, in *glibc-2.9*, ``_nss_dns_gethostbyname4_r`` was introduced, when
-*glibc* started doing ``A`` + ``AAAA`` lookups for ``getaddrinfo()`` for
-the unspecified (``AF_UNSPEC``) family::
+In 2008, in *glibc-2.9*, ``_nss_dns_gethostbyname4_r()`` was introduced, when
+*glibc* started doing *A+AAAA* lookups for ``getaddrinfo()`` for
+the unspecified *addresss family* (``AF_UNSPEC``)::
 
     commit 1eb946b93509b94db2bddce741f2f3b483418a6d
     Author: Ulrich Drepper <drepper@redhat.com>
     Date:   Sat May 10 23:27:39 2008 +0000
 
-    (adds _nss_dns_gethostbyname4_r: nss-dns4only is useful since glibc-2.9+)
+    ^-- adds _nss_dns_gethostbyname4_r:
+        nss-dns4only is useful since glibc-2.9+
 
     commit d1fe1f22192f27425accde26c562f456d835e74a
     Author: Ulrich Drepper <drepper@redhat.com>
     Date:   Wed Sep 15 10:10:05 2004 +0000
-    (adds _nss_dns_gethostbyname3_r: nss-dns4only breaks before glibc-2.3.4+)
+
+    ^-- adds _nss_dns_gethostbyname3_r:
+        nss-dns4only breaks before glibc-2.3.4+
 
 *glibc* transforms ``getaddrinfo()`` calls to calls to one or more of
 the Name Server Switch (NSS) functions. *nss-dns4only* inserts a
-``_nss_dns4only_gethostbyname4_r`` handler.
+``_nss_dns4only_gethostbyname4_r`` handler before the *glibc*
+``gethostbyname4_r()`` handler.
 
-When ``_nss_dns4only_gethostbyname4_r`` is called, it calls into *glibc*
-``libnss_dns`` directly, selecting only the ``AF_INET`` *address family.*
+When the *nss-dns4only* ``gethostbyname4_r()`` is called, it calls into *glibc*
+(``libnss_dns``) ``gethostbyname3_r()`` directly, selecting only the
+``AF_INET`` *address family.*
 
 The *glibc manual* has information about
 `Adding-another-Service-to-NSS`_ (version 2), about
@@ -250,7 +258,8 @@ detailed info is in ``./resolv/nss_dns/dns-host.c`` and
 
 *Sidenote: if your system uses libnss-resolve on localhost, you may
 already get IPv4 only responses. Note that that only works in
-conjunction with systemd-resolved.*
+conjunction with systemd-resolved. So, that's not practical for
+(Kubernetes) Docker containers.*
 
 
 /Walter Doekes, OSSO B.V. 2020
