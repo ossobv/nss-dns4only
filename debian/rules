@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE = 1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+%:
+	dh $@
+
+override_dh_builddeb:
+	# Compress .deb destination files with gzip instead of xz for
+	# compatibility with older Debian releases. See also
+	# debian/source/options for the source package.
+	dh_builddeb -- -Zgzip
+
+override_dh_makeshlibs:
+	# Older debians won't like the 'activate-noawait ldconfig'
+	# directive in the trigger file. We already 'ldconfig' in
+	# postinst, so we don't need this.
+	dh_makeshlibs --no-scripts --

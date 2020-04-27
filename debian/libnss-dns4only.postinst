@@ -1,0 +1,15 @@
+#!/bin/sh
+
+case $1 in
+configure)
+    if ! grep -q '^hosts:.*dns4\(only\|suffix\)\( \|$\)' \
+             /etc/nsswitch.conf; then
+         sed -i -e '
+             /^hosts:.*/s/ dns\( \|$\)/ dns4only [!unavail=return] dns\1/' \
+             /etc/nsswitch.conf
+    fi
+    ldconfig
+    ;;
+esac
+
+true

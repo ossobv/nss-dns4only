@@ -1,0 +1,10 @@
+/* nss-dns4only - disabling AAAA lookup in AF_UNSPEC getaddrinfo()
+ * License LGPLv3+; Copyright (C) 2020 Walter Doekes, OSSO B.V. */
+/* We only override _nss_dns4only_gethostbyname4_r as we only want to
+ * alter the behaviour of getaddinfo() when af_family is AF_UNSPEC.
+ * The other calls get passed straight to the next nss handler. */
+{
+global:
+        _nss_dns4suffix_gethostbyname4_r;
+local: *;
+};

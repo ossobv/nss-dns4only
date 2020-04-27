@@ -1,0 +1,5 @@
+nss-dns4only (0.0-0) stable; urgency=low
+
+  * Initial release.
+
+ -- Walter Doekes (work) <wjdoekes@osso.nl>  Sat, 25 Apr 2020 23:49:11 +0200

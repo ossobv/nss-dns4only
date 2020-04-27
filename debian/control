@@ -1,0 +1,23 @@
+Source: nss-dns4only
+Section: admin
+Priority: extra
+Maintainer: Walter Doekes <wjdoekes+nss-dns4only@osso.nl>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.8
+Homepage: https://github.com/ossobv/nss-dnsonly
+
+Package: libnss-dns4only
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, libc6 (>= 2.9)
+# (Don't add "${shlibs:Depends}"; it will set a stricter libc6 version subset.)
+Description: nss module removing gratuitous AAAA lookups
+ libnss-dns4only is a plug-in module for the GNU Name Service Switch (NSS)
+ functionality of the GNU C Library (glibc), replacing getaddrinfo() calls
+ for AF_UNSPEC with AF_INET: if your program doesn't specify that it wants
+ AF_INET6, it will get A-record lookups only.
+ .
+ This module works around issues in IPv4 environments where the simultaneous
+ A+AAAA records lookup add overhead (and in some cases: trouble).
+ .
+ Installing this package automatically adds the module to /etc/nsswitch.conf.

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case $1 in
+remove|purge)
+    sed -i -e '/^hosts:/s/ dns4only [[]!unavail=return[]]//' /etc/nsswitch.conf
+    ldconfig
+    ;;
+esac
+
+true

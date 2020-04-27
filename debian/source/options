@@ -1,0 +1,2 @@
+# Maximum compatibility with older Debian releases.
+compression = "gzip"
