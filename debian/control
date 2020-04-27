@@ -12,7 +12,7 @@ Multi-Arch: foreign
 Depends: ${misc:Depends}, libc6 (>= 2.9)
 # (Don't add "${shlibs:Depends}"; it will set a stricter libc6 version subset.)
 Description: nss module removing gratuitous AAAA lookups
- libnss-dns4only is a plug-in module for the GNU Name Service Switch (NSS)
+ nss-dns4only is a plug-in module for the GNU Name Service Switch (NSS)
  functionality of the GNU C Library (glibc), replacing getaddrinfo() calls
  for AF_UNSPEC with AF_INET: if your program doesn't specify that it wants
  AF_INET6, it will get A-record lookups only.

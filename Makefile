@@ -35,6 +35,8 @@ install: all
 	  $(DESTDIR)$(base_libdir)/libnss_dns4suffix.so.2
 	ln -sf $(base_libdir)/libnss_dns4suffix.so.2 \
 	  $(DESTDIR)$(libdir)/libnss_dns4suffix.so
+	# When building a package, fakeroot will not allow ldconfig to
+	# be called. Ignore failure.
 	-ldconfig
 
 example:
