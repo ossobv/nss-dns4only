@@ -201,8 +201,20 @@ And now, this example call will return IPv4 addresses only:
 Debian packaging and download
 -----------------------------
 
-TODO: Here we want some download links for pre-built binaries and debian
-packages.
+A pre-built debian package can be found here:
+
+https://download.osso.pub/deb/nss-dns4only/nss-dns4only_0.1-1/libnss-dns4only_0.1-1_amd64.deb
+
+It should work on any Debian/Ubuntu with *glibc-2.9* or newer (amd64 only).
+
+Or, you could get just the dynamic library (amd64 only), and place
+it in ``/lib/`` yourself::
+
+    curl https://download.osso.pub/deb/nss-dns4only/nss-dns4only_0.1-1/libnss_dns4only-0.1.so \
+        -o /lib/x86_64-linux-gnu/libnss_dns4only.so.2
+    ldconfig
+    sed -i -e '/^hosts:.*/s/ dns\( \|$\)/ dns4only [!UNAVAIL=return] dns\1/' \
+        /etc/nsswitch.conf
 
 
 Technical background/history
